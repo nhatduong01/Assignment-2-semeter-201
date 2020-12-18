@@ -27,6 +27,7 @@ class AVLTree
 {
 public:
     class Node;
+    AVLTree() { this->root = nullptr; }
 
 private:
     Node *root;
@@ -40,6 +41,7 @@ protected:
         int rh = this->getHeightRec(node->pRight);
         return (lh > rh ? lh : rh) + 1;
     }
+
 public:
     int getHeight()
     {
@@ -294,6 +296,10 @@ int main()
         avl.insert(arr[i]);
     }
     avl.printTreeStructure();
-    system("pause");
+    for (int i = 0; i < 12; i++)
+    {
+        avl.remove(arr[i]);
+    }
+
     return 0;
 }

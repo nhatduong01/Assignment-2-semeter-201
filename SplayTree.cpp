@@ -12,6 +12,110 @@ private:
     Node *root;
 
 protected:
+    T search(Node *node, const T &key)
+    {
+        if (node == nullptr)
+        {
+            throw("Not Found");
+        }
+        else
+        {
+            if (key == node->data)
+            {
+                Self_Splay3(this->root, node);
+                return key;
+            }
+            else if (key > node->data)
+                return search(node->pRight, key);
+            else
+            {
+                return search(node->pLeft, key);
+            }
+        }
+    }
+    void remove(Node *root, const T &key)
+    {
+        if (root == nullptr)
+            throw("Not Found");
+        else
+        {
+            if (key > root->data)
+                remove(root->pRight, key);
+            else if (key < root->data)
+                remove(root->pLeft, key);
+            else
+            {
+                Node *temp1 = root;
+                Self_Splay3(this->root, temp1);
+                if (root->pLeft && root->pRight)
+                {
+                    Node *temp = this->root;
+                    Node *temp_left = temp->pLeft;
+                    temp_left->pParent = nullptr;
+                    Node *temp_right = temp->pRight;
+                    temp_right->pParent = nullptr;
+                    delete temp;
+                    Node *biggestLeft = BiggestLeft(temp_left);
+                    Self_Splay3(temp_left, biggestLeft);
+                    temp_left->pRight = temp_right;
+                    temp_right->pParent = temp_left;
+                    this->root = temp_left;
+                }
+                else if (root->pLeft)
+                {
+                    Node *temp = this->root;
+                    Node *temp_left = temp->pLeft;
+                    temp_left->pParent = nullptr;
+                    delete temp;
+                    Node *biggestLeft = BiggestLeft(temp_left);
+                    Self_Splay3(temp_left, biggestLeft);
+                    this->root = temp_left;
+                }
+                else if (root->pRight)
+                {
+                    Node *temp = this->root;
+                    Node *temp_right = temp->pRight;
+                    temp_right->pParent = nullptr;
+                    this->root = temp_right;
+                    delete temp;
+                }
+                else
+                {
+                    delete root;
+                    this->root = nullptr;
+                }
+            }
+        }
+    }
+    Node *BiggestLeft(Node *root)
+    {
+        if (root->pRight)
+            return BiggestLeft(root->pRight);
+        else
+        {
+            return root;
+        }
+    }
+    void prettyPrintTree(Node *node, string prefix = "", bool isLeft = true)
+    {
+        if (node == nullptr)
+        {
+            cout << "Empty tree";
+            return;
+        }
+
+        if (node->pRight)
+        {
+            prettyPrintTree(node->pRight, prefix + (isLeft ? "│   " : "    "), false);
+        }
+
+        cout << prefix + (isLeft ? "└── " : "┌── ") + to_string(node->data) + "\n";
+
+        if (node->pLeft)
+        {
+            prettyPrintTree(node->pLeft, prefix + (isLeft ? "    " : "│   "), true);
+        }
+    }
     string inOrderRec(Node *root)
     {
         stringstream ss;
@@ -150,56 +254,6 @@ protected:
             }
         }
     }
-    void Self_Splay4(Node *&root, Node *new_node)
-    {
-        while (new_node->pParent != nullptr)
-        {
-            if (new_node->pParent == root)
-            {
-                if (new_node == new_node->pParent->pLeft)
-                {
-                    root = Right_Rotation(new_node->pParent);
-                }
-                else
-                {
-                    root = Left_Rotation(new_node->pParent);
-                }
-            }
-            else
-            {
-                Node *p = new_node->pParent;
-                Node *g = p->pParent;
-                if (new_node == new_node->pParent->pLeft && p == p->pParent->pLeft)
-                {
-                    g = Right_Rotation(g);
-                    p = Right_Rotation(p);
-                    if (new_node->pParent == nullptr)
-                        root = p;
-                }
-                else if (new_node == new_node->pParent->pRight && p == p->pParent->pRight)
-                {
-                    g = Left_Rotation(g);
-                    p = Left_Rotation(p);
-                    if (new_node->pParent == nullptr)
-                        root = p;
-                }
-                else if (new_node == new_node->pParent->pLeft && p == p->pParent->pRight)
-                {
-                    p = Right_Rotation(p);
-                    g = Left_Rotation(g);
-                    if (new_node->pParent == nullptr)
-                        root = g;
-                }
-                else
-                {
-                    p = Left_Rotation(p);
-                    g = Right_Rotation(g);
-                    if (new_node->pParent == nullptr)
-                        root = g;
-                }
-            }
-        }
-        }
 
 public:
     SplayTree() : root(nullptr) {}
@@ -223,26 +277,6 @@ public:
     void print2()
     {
         prettyPrintTree(root);
-    }
-    void prettyPrintTree(Node *node, string prefix = "", bool isLeft = true)
-    {
-        if (node == nullptr)
-        {
-            cout << "Empty tree";
-            return;
-        }
-
-        if (node->pRight)
-        {
-            prettyPrintTree(node->pRight, prefix + (isLeft ? "│   " : "    "), false);
-        }
-
-        cout << prefix + (isLeft ? "└── " : "┌── ") + to_string(node->data) + "\n";
-
-        if (node->pLeft)
-        {
-            prettyPrintTree(node->pLeft, prefix + (isLeft ? "    " : "│   "), true);
-        }
     }
     int getHeight()
     {
@@ -277,27 +311,9 @@ public:
     {
         return search(this->root, key);
     }
-    T search(Node *node, const T &key)
+    void remove(const T &key)
     {
-        if (node == nullptr)
-        {
-            throw("Not Found");
-        }
-        else
-        {
-            if (key == node->data)
-            {
-                Node *temp = node;
-                Self_Splay4(this->root, node);
-                return key;
-            }
-            else if (key > node->data)
-                return search(node->pRight, key);
-            else
-            {
-                return search(node->pLeft, key);
-            }
-        }
+        remove(this->root, key);
     }
 };
 template <class T>
@@ -349,9 +365,45 @@ int main()
     test_tree.add(100);
     test_tree.add(915);
     test_tree.add(793);
-    //test_tree.add(100);
+    test_tree.add(150);
     test_tree.print2();
-    cout << test_tree.search(383) << endl;
+    test_tree.search(383);
+    test_tree.print2();
+    test_tree.add(700);
+    test_tree.add(701);
+    test_tree.add(702);
+    test_tree.add(703);
+    test_tree.add(704);
+    test_tree.add(705);
+    test_tree.search(793);
+    test_tree.print2();
+    test_tree.add(500);
+    test_tree.search(702);
+    test_tree.print2();
+    test_tree.remove(500);
+    test_tree.print2();
+    test_tree.remove(703);
+    test_tree.print2();
+    int arr[] = {100, 105, 102, 99, 103, 106, 107};
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.add(arr[i]);
+    }
+    test_tree.print2();
+    for (int i = 0; i < 3; i++)
+    {
+        test_tree.search(arr[i]);
+    }
+    test_tree.print2();
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.remove(arr[i]);
+    }
+    test_tree.print2();
+    test_tree.add(10);
+    test_tree.add(12);
+    test_tree.add(11);
+    test_tree.remove(10);
     test_tree.print2();
     system("pause");
     return 0;
