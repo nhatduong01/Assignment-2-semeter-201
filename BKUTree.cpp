@@ -31,8 +31,8 @@ public:
     BKUTree(int maxNumOfKeys = 5)
     {
         this->maxNumOfKeys = 5;
-        avl = nullptr;
-        splay = nullptr;
+        avl = new AVLTree();
+        splay = new SplayTree();
     }
     ~BKUTree()
     {
@@ -50,11 +50,74 @@ public:
             keys.push(key);
         }
         Entry *new_entry = new Entry(key, value);
-        avl->add(new_entry);
-        splay->add(new_entry);
+        typename AVLTree::Node *A = avl->add(new_entry);
+        typename SplayTree::Node *B = splay->add(new_entry);
+        A->corr = B;
+        B->corr = A;
     }
-    void remove(K key);
-    V search(K key, vector<K> &traversedList);
+    void remove(K key)
+    {
+        bool found = false;
+        int size_queue = keys.size();
+        while (size_queue && !keys.empty())
+        {
+            K temp_key = keys.front();
+            keys.pop();
+            if (temp_key == key)
+            {
+                found = true;
+            }
+            else
+            {
+                keys.push(temp_key);
+            }
+            size_queue--;
+        }
+        splay->remove(key);
+        avl->remove(key);
+        if (found == true)
+        {
+            if (splay->root)
+                keys.push(splay->root->entry->key);
+        }
+    }
+    V search(K key, vector<K> &traversedList)
+    {
+        if (keys.size() == maxNumOfKeys)
+        {
+            keys.pop();
+            keys.push(key);
+        }
+        else
+        {
+            keys.push(key);
+        }
+        if (splay->root->entry->key == key)
+            return splay->root->entry->value;
+        else
+        {
+            traversedList.push_back(splay->root->entry->key);
+            bool found = false;
+            int size = keys.size();
+            while (size)
+            {
+                K temp = keys.front();
+                keys.pop();
+                keys.push(temp);
+                if (temp == key)
+                    found == true;
+                size--;
+            }
+            if (found == true)
+            {
+                return splay->search(splay->root, key, traversedList);
+            }
+            else
+            {
+                typename AVLTree::Node *A = splay->root->corr;
+            }
+        }
+    }
     void traverseNLROnAVL(void (*func)(K key, V value))
     {
         avl->traverseNLR(func);
@@ -95,6 +158,25 @@ public:
         };
 
     protected:
+        V search(Node *root, K key, vector<K> &traversedList)
+        {
+
+            if (key > root->entry->key)
+            {
+                traversedList.push_back(root->entry->key);
+                return search(root->right, key, traversedList);
+            }
+            else if (key < root->entry->key)
+            {
+                traversedList.push_back(root->entry->key);
+                return search(root->left, key, traversedList);
+            }
+            else
+            {
+                Self_Splay_only_one(this->root, root);
+                return root->entry->value;
+            }
+        }
         Node *BiggestLeft(Node *root)
         {
             if (root->right)
@@ -165,6 +247,53 @@ public:
             }
             return temp;
         }
+        void Self_Splay_only_one(Node *&root, Node *&new_node)
+        {
+            if (new_node->parent == root)
+            {
+                if (new_node == new_node->parent->left)
+                {
+                    root = Right_Rotation(new_node->parent);
+                }
+                else
+                {
+                    root = Left_Rotation(new_node->parent);
+                }
+            }
+            else
+            {
+                Node *p = new_node->parent;
+                Node *g = p->parent;
+                if (new_node == new_node->parent->left && p == p->parent->left)
+                {
+                    g = Right_Rotation(g);
+                    p = Right_Rotation(p);
+                    if (new_node->parent == nullptr)
+                        root = p;
+                }
+                else if (new_node == new_node->parent->right && p == p->parent->right)
+                {
+                    g = Left_Rotation(g);
+                    p = Left_Rotation(p);
+                    if (new_node->parent == nullptr)
+                        root = p;
+                }
+                else if (new_node == new_node->parent->left && p == p->parent->right)
+                {
+                    p = Right_Rotation(p);
+                    g = Left_Rotation(g);
+                    if (new_node->parent == nullptr)
+                        root = g;
+                }
+                else
+                {
+                    p = Left_Rotation(p);
+                    g = Right_Rotation(g);
+                    if (new_node->parent == nullptr)
+                        root = g;
+                }
+            }
+        }
         void Self_Splay1(Node *&root, Node *&new_node)
         {
             while (new_node->parent != nullptr)
@@ -215,7 +344,7 @@ public:
                 }
             }
         }
-        void add(Node *&root, Node *&new_node)
+        Node *add(Node *&root, Node *&new_node)
         {
             Node *temp = root;
             Node *prev = nullptr;
@@ -246,11 +375,12 @@ public:
                 }
             }
             Self_Splay1(this->root, new_node);
+            return new_node;
         }
-        void add(Node *&root, Entry *entry)
+        Node *add(Node *&root, Entry *entry)
         {
             Node *new_node = new Node(entry);
-            add(this->root, new_node);
+            return add(this->root, new_node);
         }
         void remove(Node *root, K key)
         {
@@ -303,7 +433,6 @@ public:
                     }
                     else
                     {
-                        delete root->entry;
                         delete root;
                         this->root = nullptr;
                     }
@@ -338,9 +467,9 @@ public:
             Entry *temp = new Entry(key, value);
             add(this->root, temp);
         }
-        void add(Entry *entry)
+        Node *add(Entry *entry)
         {
-            add(this->root, entry);
+            return add(this->root, entry);
         }
         void remove(K key)
         {
@@ -492,13 +621,13 @@ public:
                 }
             }
         }
-        void add(Node *&, Entry *);
+        void add(Node *&, Entry *, Node *);
 
     public:
         AVLTree() : root(NULL){};
         ~AVLTree() { this->clear(); };
         void add(K key, V value);
-        void add(Entry *entry);
+        Node *add(Entry *entry);
         void remove(K key)
         {
             remove(this->root, key);
@@ -574,31 +703,33 @@ template <class K, class V>
 void BKUTree<K, V>::AVLTree::add(K key, V value)
 {
     Entry *temp = new Entry(key, value);
-    add(this->root, temp);
+    Node *new_node = new Node(temp);
+    add(this->root, temp, new_node);
 }
 template <class K, class V>
-void BKUTree<K, V>::AVLTree::add(Entry *entry)
+typename BKUTree<K, V>::AVLTree::Node *BKUTree<K, V>::AVLTree::add(Entry *entry)
 {
-    add(this->root, entry);
+    Node *new_node = new Node(entry);
+    add(this->root, entry, new_node);
+    return new_node;
 }
 template <class K, class V>
-void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry)
+void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry, Node *new_node)
 {
     if (root == nullptr)
     {
-        Node *temp = new Node(entry);
-        root = temp;
+        root = new_node;
         return;
     }
     else
     {
         if (entry->key < root->entry->key)
         {
-            add(root->left, entry);
+            add(root->left, entry, new_node);
         }
         else if (entry->key > root->entry->key)
         {
-            add(root->right, entry);
+            add(root->right, entry, new_node);
         }
         else
         {
@@ -609,7 +740,7 @@ void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry)
 }
 int main()
 {
-    BKUTree<int, int> test;
+    /*BKUTree<int, int> test;
     BKUTree<int, int>::AVLTree test_avl;
     int arr[] = {10, 52, 98, 32, 68, 92, 40, 13, 42, 63, 99, 100};
     for (int i = 0; i < 12; i++)
@@ -721,7 +852,19 @@ int main()
     cout << "\nTest removing all\n";
     test_tree1.traverseNLR([](int a, int b) {
         cout << a << "  ";
-    });
+    });*/
+    BKUTree<int, int> *tree = new BKUTree<int, int>();
+    int keys[] = {1, 3, 5, 7, 9, 2, 4};
+    for (int i = 0; i < 7; i++)
+        tree->add(keys[i], keys[i]);
+    tree->traverseNLROnSplay(printKey);
+    cout << endl;
+    tree->traverseNLROnAVL(printKey);
+    for (int i = 0; i < 7; i++)
+        tree->remove(keys[i]);
+    tree->traverseNLROnSplay(printKey);
+    cout << endl;
+    tree->traverseNLROnAVL(printKey);
     system("pause");
     return 0;
 }
