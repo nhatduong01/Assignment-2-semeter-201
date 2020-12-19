@@ -84,6 +84,7 @@ public:
             {
                 clear(root->left);
                 clear(root->right);
+                delete root->entry;
                 delete root;
             }
         }
@@ -179,29 +180,42 @@ public:
                 }
             }
         }
-        void add(Node *root, Entry *entry)
+        void add(Node *&root, Node *&new_node)
         {
-            if (root == nullptr)
+            Node *temp = root;
+            Node *prev = nullptr;
+            while (temp != nullptr)
             {
-                Node *temp = new Node(entry);
-                root = temp;
-                Self_Splay1(this->root, temp);
-                return;
+                prev = temp;
+                if (new_node->entry->key < temp->entry->key)
+                    temp = temp->left;
+                else
+                    temp = temp->right;
+            }
+            if (prev == nullptr)
+            {
+                root = new_node;
+                root->parent = nullptr;
             }
             else
             {
-                if (entry->key < root->entry->key)
+                if (new_node->entry->key < prev->entry->key)
                 {
-                    add(root->left, entry);
+                    prev->left = new_node;
+                    new_node->parent = prev;
                 }
-                else if (entry->key > root->entry->key)
+                else
                 {
-                    add(root->right, entry);
-                }
-                {
-                    throw("Duplicate key");
+                    prev->right = new_node;
+                    new_node->parent = prev;
                 }
             }
+            Self_Splay1(this->root, new_node);
+        }
+        void add(Node *&root, Entry *entry)
+        {
+            Node *new_node = new Node(entry);
+            add(this->root, new_node);
         }
         void remove(Node *root, K key)
         {
@@ -269,7 +283,7 @@ public:
                     return search(root->left, key);
                 else
                 {
-                    Self_Splay3(this->root, root);
+                    Self_Splay1(this->root, root);
                     return root->entry->value;
                 }
             }
@@ -344,10 +358,11 @@ public:
             {
                 clear(root->left);
                 clear(root->right);
+                delete root->entry;
                 delete root;
             }
         }
-        void remove(Node *, K);
+        void remove(Node *&, K);
         Entry *BiggestLeft(Node *root)
         {
             if (root->right)
@@ -437,13 +452,13 @@ public:
                 }
             }
         }
+        void add(Node *&, Entry *);
 
     public:
         AVLTree() : root(NULL){};
         ~AVLTree() { this->clear(); };
         void add(K key, V value);
         void add(Entry *entry);
-        void add(Node *, Entry *);
         void remove(K key)
         {
             remove(this->root, key);
@@ -467,7 +482,7 @@ public:
     };
 };
 template <class K, class V>
-void BKUTree<K, V>::AVLTree::remove(Node *root, K key)
+void BKUTree<K, V>::AVLTree::remove(Node *&root, K key)
 {
     if (root == nullptr)
         throw("Not Found");
@@ -523,7 +538,7 @@ void BKUTree<K, V>::AVLTree::add(Entry *entry)
     add(this->root, entry);
 }
 template <class K, class V>
-void BKUTree<K, V>::AVLTree::add(Node *root, Entry *entry)
+void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry)
 {
     if (root == nullptr)
     {
@@ -541,6 +556,7 @@ void BKUTree<K, V>::AVLTree::add(Node *root, Entry *entry)
         {
             add(root->right, entry);
         }
+        else
         {
             throw("Duplicate key");
         }
@@ -556,10 +572,112 @@ int main()
     {
         test_avl.add(arr[i], i);
     }
+    test_avl.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
     for (int i = 0; i < 12; i++)
     {
         test_avl.remove(arr[i]);
     }
+    test_avl.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << "\n Test splay tree \n";
+    BKUTree<int, int>::SplayTree test_tree;
+    test_tree.add(383, 1);
+    test_tree.add(886, 1);
+    test_tree.add(100, 1);
+    test_tree.add(915, 1);
+    test_tree.add(793, 1);
+    test_tree.add(150, 1);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.search(383);
+    cout << "\nTest Searching \n ";
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.add(700, 1);
+    test_tree.add(701, 1);
+    test_tree.add(702, 1);
+    test_tree.add(703, 1);
+    test_tree.add(704, 1);
+    test_tree.add(705, 1);
+    cout << endl;
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.search(793);
+    cout << endl;
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.add(500, 1);
+    test_tree.search(702);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.remove(500);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.remove(703);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    int arr1[] = {100, 105, 102, 99, 103, 106, 107, 111, 999, 123, 145, 165, 250, 270, 108};
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.add(arr1[i], 1);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 3; i++)
+    {
+        test_tree.search(arr1[i]);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.remove(arr1[i]);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.add(10, 1);
+    test_tree.add(12, 1);
+    test_tree.add(11, 1);
+    test_tree.remove(10);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    cout << "Test tree 2 \n";
+    BKUTree<int, int>::SplayTree test_tree1;
+    for (int i = 0; i < 15; i++)
+    {
+        test_tree1.add(arr1[i], 1);
+    }
+    test_tree1.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 15; i++)
+    {
+        test_tree1.remove(arr1[i]);
+    }
+    cout << "\nTest removing all\n";
+    test_tree1.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
     system("pause");
     return 0;
 }

@@ -300,6 +300,5 @@ int main()
     {
         avl.remove(arr[i]);
     }
-
     return 0;
 }
