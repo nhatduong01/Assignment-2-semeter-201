@@ -2,7 +2,10 @@
 #include <queue>
 #include <vector>
 using namespace std;
-
+void printKey(int key, int value)
+{
+    cout << key << endl;
+}
 template <class K, class V>
 class BKUTree
 {
@@ -27,18 +30,50 @@ private:
 public:
     BKUTree(int maxNumOfKeys = 5)
     {
+        this->maxNumOfKeys = 5;
+        avl = nullptr;
+        splay = nullptr;
     }
     ~BKUTree()
-    { /*this->clear();*/
+    {
+        this->clear();
     }
-
-    void add(K key, V value);
+    void add(K key, V value)
+    {
+        if (keys.size() == maxNumOfKeys)
+        {
+            keys.pop();
+            keys.push(key);
+        }
+        else
+        {
+            keys.push(key);
+        }
+        Entry *new_entry = new Entry(key, value);
+        avl->add(new_entry);
+        splay->add(new_entry);
+    }
     void remove(K key);
     V search(K key, vector<K> &traversedList);
-
-    void traverseNLROnAVL(void (*func)(K key, V value));
-    void traverseNLROnSplay(void (*func)(K key, V value));
-    void clear();
+    void traverseNLROnAVL(void (*func)(K key, V value))
+    {
+        avl->traverseNLR(func);
+    }
+    void traverseNLROnSplay(void (*func)(K key, V value))
+    {
+        splay->traverseNLR(func);
+    }
+    void clear()
+    {
+        if (avl)
+            avl->clear();
+        if (splay)
+            splay->clear();
+        while (!keys.empty())
+        {
+            keys.pop();
+        }
+    }
     class SplayTree
     {
     public:
@@ -238,6 +273,7 @@ public:
                         temp_left->parent = nullptr;
                         Node *temp_right = temp->right;
                         temp_right->parent = nullptr;
+                        ;
                         delete temp;
                         Node *biggestLeft = BiggestLeft(temp_left);
                         Self_Splay1(temp_left, biggestLeft);
@@ -250,6 +286,7 @@ public:
                         Node *temp = this->root;
                         Node *temp_left = temp->left;
                         temp_left->parent = nullptr;
+
                         delete temp;
                         Node *biggestLeft = BiggestLeft(temp_left);
                         Self_Splay1(temp_left, biggestLeft);
@@ -261,10 +298,12 @@ public:
                         Node *temp_right = temp->right;
                         temp_right->parent = nullptr;
                         this->root = temp_right;
+                        ;
                         delete temp;
                     }
                     else
                     {
+                        delete root->entry;
                         delete root;
                         this->root = nullptr;
                     }
@@ -317,7 +356,8 @@ public:
         }
         void clear()
         {
-            clear(this->root);
+            if (this->root)
+                clear(this->root);
         }
     };
     class AVLTree
@@ -473,7 +513,8 @@ public:
         }
         void clear()
         {
-            clear(this->root);
+            if (this->root)
+                clear(this->root);
         }
         int getHeight()
         {
@@ -502,18 +543,21 @@ void BKUTree<K, V>::AVLTree::remove(Node *&root, K key)
             {
                 Node *temp = root;
                 root = nullptr;
+                //;
                 delete temp;
             }
             else if (!root->right)
             {
                 Node *temp = root;
                 root = root->left;
+                //;
                 delete temp;
             }
             else if (!root->left)
             {
                 Node *temp = root;
                 root = root->right;
+                //;
                 delete temp;
             }
             else
