@@ -25,10 +25,10 @@ private:
     AVLTree *avl;
     SplayTree *splay;
     queue<K> keys;
-    int maxNumOfKeys;
+    unsigned int maxNumOfKeys;
 
 public:
-    BKUTree(int maxNumOfKeys = 5)
+    BKUTree(unsigned int maxNumOfKeys = 5)
     {
         this->maxNumOfKeys = maxNumOfKeys;
         avl = new AVLTree();
@@ -104,7 +104,7 @@ public:
                 keys.pop();
                 keys.push(temp);
                 if (temp == key)
-                    found == true;
+                    found = true;
                 size--;
             }
             if (found == true)
