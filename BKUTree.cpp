@@ -30,7 +30,7 @@ private:
 public:
     BKUTree(int maxNumOfKeys = 5)
     {
-        this->maxNumOfKeys;
+        this->maxNumOfKeys = maxNumOfKeys;
         avl = new AVLTree();
         splay = new SplayTree();
     }
@@ -62,17 +62,12 @@ public:
     }
     void remove(K key)
     {
-        bool found = false;
         int size_queue = keys.size();
         while (size_queue && !keys.empty())
         {
             K temp_key = keys.front();
             keys.pop();
-            if (temp_key == key)
-            {
-                found = true;
-            }
-            else
+            if (temp_key != key)
             {
                 keys.push(temp_key);
             }
@@ -80,25 +75,24 @@ public:
         }
         splay->remove(key);
         avl->remove(key);
-        if (found == true)
-        {
-            if (splay->root)
-                keys.push(splay->root->entry->key);
-        }
+        if (splay->root)
+            keys.push(splay->root->entry->key);
     }
     V search(K key, vector<K> &traversedList)
     {
-        if (keys.size() == maxNumOfKeys)
-        {
-            keys.pop();
-            keys.push(key);
-        }
-        else
-        {
-            keys.push(key);
-        }
         if (splay->root->entry->key == key)
+        {
+            if (keys.size() == maxNumOfKeys)
+            {
+                keys.pop();
+                keys.push(key);
+            }
+            else
+            {
+                keys.push(key);
+            }
             return splay->root->entry->value;
+        }
         else
         {
             traversedList.push_back(splay->root->entry->key);
@@ -115,6 +109,15 @@ public:
             }
             if (found == true)
             {
+                if (keys.size() == maxNumOfKeys)
+                {
+                    keys.pop();
+                    keys.push(key);
+                }
+                else
+                {
+                    keys.push(key);
+                }
                 return splay->search(splay->root, key, traversedList);
             }
             else
@@ -126,12 +129,30 @@ public:
                     B = avl->search_AVL2(avl->root, key, A, traversedList);
                     typename SplayTree::Node *temp_splay = B->corr;
                     splay->Self_Splay_only_one(splay->root, temp_splay);
+                    if (keys.size() == maxNumOfKeys)
+                    {
+                        keys.pop();
+                        keys.push(key);
+                    }
+                    else
+                    {
+                        keys.push(key);
+                    }
                     return B->entry->value;
                 }
                 else
                 {
                     typename SplayTree::Node *temp_splay = B->corr;
                     splay->Self_Splay_only_one(splay->root, temp_splay);
+                    if (keys.size() == maxNumOfKeys)
+                    {
+                        keys.pop();
+                        keys.push(key);
+                    }
+                    else
+                    {
+                        keys.push(key);
+                    }
                     return B->entry->value;
                 }
             }
@@ -185,12 +206,14 @@ public:
 
             if (key > root->entry->key)
             {
-                traversedList.push_back(root->entry->key);
+                if (traversedList[traversedList.size() - 1] != root->entry->key)
+                    traversedList.push_back(root->entry->key);
                 return search(root->right, key, traversedList);
             }
             else if (key < root->entry->key)
             {
-                traversedList.push_back(root->entry->key);
+                if (traversedList[traversedList.size() - 1] != root->entry->key)
+                    traversedList.push_back(root->entry->key);
                 return search(root->left, key, traversedList);
             }
             else
@@ -655,12 +678,14 @@ public:
             {
                 if (key > root->entry->key)
                 {
-                    traversedList.push_back(root->entry->key);
+                    if (traversedList[traversedList.size() - 1] != root->entry->key)
+                        traversedList.push_back(root->entry->key);
                     return search_AVL(root->right, key, traversedList);
                 }
                 else if (key < root->entry->key)
                 {
-                    traversedList.push_back(root->entry->key);
+                    if (traversedList[traversedList.size() - 1] != root->entry->key)
+                        traversedList.push_back(root->entry->key);
                     return search_AVL(root->left, key, traversedList);
                 }
                 else
@@ -679,12 +704,14 @@ public:
             {
                 if (key > root->entry->key)
                 {
-                    traversedList.push_back(root->entry->key);
+                    if (traversedList[traversedList.size() - 1] != root->entry->key)
+                        traversedList.push_back(root->entry->key);
                     return search_AVL2(root->right, key, temp, traversedList);
                 }
                 else if (key < root->entry->key)
                 {
-                    traversedList.push_back(root->entry->key);
+                    if (traversedList[traversedList.size() - 1] != root->entry->key)
+                        traversedList.push_back(root->entry->key);
                     return search_AVL2(root->left, key, temp, traversedList);
                 }
                 else
@@ -933,14 +960,16 @@ int main()
     tree->traverseNLROnAVL(printKey);
     cout << "\n Testing Search \n";
     vector<int> traversedList;
-    cout << tree->search(3, traversedList);
     cout << "\n Testing the queue \n";
     queue<int> test_queue = tree->copy_queue();
+    cout << "The size is : " << test_queue.size() << endl;
     while (test_queue.size() != 0)
     {
         cout << test_queue.front() << "\t";
         test_queue.pop();
     }
+    cout << endl;
+    cout << tree->search(7, traversedList);
     cout << "\n Print the vector \n";
     for (auto i = traversedList.begin(); i != traversedList.end(); i++)
     {
@@ -951,6 +980,9 @@ int main()
     tree->traverseNLROnSplay(printKey);
     cout << endl;
     tree->traverseNLROnAVL(printKey);*/
-    //system("pause");
+    cout << endl;
+    cout << "The slay tree is : \n";
+    tree->traverseNLROnSplay(printKey);
+    system("pause");
     return 0;
 }
