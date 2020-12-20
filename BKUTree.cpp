@@ -6,6 +6,10 @@ void printKey(int key, int value)
 {
     cout << key << endl;
 }
+int max(int a, int b)
+{
+    return a > b ? a : b;
+}
 template <class K, class V>
 class BKUTree
 {
@@ -461,7 +465,6 @@ public:
                         Node *temp = this->root;
                         Node *temp_left = temp->left;
                         temp_left->parent = nullptr;
-
                         delete temp;
                         Node *biggestLeft = BiggestLeft(temp_left);
                         Self_Splay1(temp_left, biggestLeft);
@@ -545,6 +548,7 @@ public:
             Node *left;
             Node *right;
             int balance;
+            int height;
             typename SplayTree::Node *corr;
             Node(Entry *entry = NULL, Node *left = NULL, Node *right = NULL)
             {
@@ -553,6 +557,7 @@ public:
                 this->right = right;
                 this->balance = 0;
                 this->corr = NULL;
+                this->height = 1;
             }
         };
         Node *root;
@@ -593,11 +598,7 @@ public:
                 return 0;
             else
             {
-                int left = 0;
-                int right = 0;
-                left = 1 + Height(_root->left);
-                right = 1 + Height(_root->right);
-                return left < right ? right : left;
+                return _root->height;
             }
         }
         V search(Node *root, K key)
@@ -621,6 +622,8 @@ public:
             Node *temp = _root->right;
             _root->right = temp->left;
             temp->left = _root;
+            _root->height = max(Height(_root->left), Height(_root->right)) + 1;
+            temp->height = max(Height(temp->right), Height(temp->left)) + 1;
             _root = temp;
         }
         void RotateRight(Node *&_root)
@@ -628,6 +631,8 @@ public:
             Node *temp = _root->left;
             _root->left = temp->right;
             temp->right = _root;
+            _root->height = max(Height(_root->left), Height(_root->right)) + 1;
+            temp->height = max(Height(temp->right), Height(temp->left)) + 1;
             _root = temp;
         }
         int BalanceFactor(Node *_root)
@@ -644,7 +649,7 @@ public:
                 return;
             if (BalanceFactor(_root) > 1)
             {
-                if (BalanceFactor(_root->left) >= 1)
+                if (BalanceFactor(_root->left) >= 0)
                 {
                     RotateRight(_root);
                 }
@@ -661,7 +666,7 @@ public:
                     RotateRight(_root->right);
                     RotateLeft(_root);
                 }
-                else if (BalanceFactor(_root->right) <= -1)
+                else if (BalanceFactor(_root->right) <= 0)
                 {
                     RotateLeft(_root);
                 }
@@ -794,6 +799,8 @@ void BKUTree<K, V>::AVLTree::remove(Node *&root, K key)
                 remove(root->left, temp->key);
             }
         }
+        if (root)
+            root->height = max(Height(root->left), Height(root->right)) + 1;
         SeflBalancing(root);
     }
 }
@@ -834,10 +841,123 @@ void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry, Node *new_node)
             throw("Duplicate key");
         }
     }
+    root->height = max(Height(root->left), Height(root->right)) + 1;
     SeflBalancing(root);
 }
 int main()
 {
+    //BKUTree<int, int> test;
+    /*int arr[] = {10, 52, 98, 32, 68, 92, 40, 13, 42, 63, 99, 100};
+    for (int i = 0; i < 12; i++)
+    {
+        test_avl.add(arr[i], i);
+    }
+    test_avl.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    for (int i = 0; i < 12; i++)
+    {
+        test_avl.remove(arr[i]);
+    }
+    test_avl.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    /*cout << "\n Test splay tree \n";
+    BKUTree<int, int>::SplayTree test_tree;
+    test_tree.add(383, 1);
+    test_tree.add(886, 1);
+    test_tree.add(100, 1);
+    test_tree.add(915, 1);
+    test_tree.add(793, 1);
+    test_tree.add(150, 1);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.search(383);
+    cout << "\nTest Searching \n ";
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.add(700, 1);
+    test_tree.add(701, 1);
+    test_tree.add(702, 1);
+    test_tree.add(703, 1);
+    test_tree.add(704, 1);
+    test_tree.add(705, 1);
+    cout << endl;
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.search(793);
+    cout << endl;
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.add(500, 1);
+    test_tree.search(702);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.remove(500);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    test_tree.remove(703);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    int arr1[] = {100, 105, 102, 99, 103, 106, 107, 111, 999, 123, 145, 165, 250, 270, 108};
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.add(arr1[i], 1);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 3; i++)
+    {
+        test_tree.search(arr1[i]);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 7; i++)
+    {
+        test_tree.remove(arr1[i]);
+    }
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    test_tree.add(10, 1);
+    test_tree.add(12, 1);
+    test_tree.add(11, 1);
+    test_tree.remove(10);
+    test_tree.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    cout << endl;
+    cout << "Test tree 2 \n";
+    BKUTree<int, int>::SplayTree test_tree1;
+    for (int i = 0; i < 15; i++)
+    {
+        test_tree1.add(arr1[i], 1);
+    }
+    test_tree1.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });
+    for (int i = 0; i < 15; i++)
+    {
+        test_tree1.remove(arr1[i]);
+    }
+    cout << "\nTest removing all\n";
+    test_tree1.traverseNLR([](int a, int b) {
+        cout << a << "  ";
+    });*/
     /*BKUTree<int, int> test;
     BKUTree<int, int>::AVLTree test_avl;
     int arr[] = {10, 52, 98, 32, 68, 92, 40, 13, 42, 63, 99, 100};

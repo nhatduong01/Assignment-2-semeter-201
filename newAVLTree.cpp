@@ -171,7 +171,7 @@ public:
             return;
         if (BalanceFactor(_root) > 1)
         {
-            if (BalanceFactor(_root->pLeft) >= 1)
+            if (BalanceFactor(_root->pLeft) >= 0)
             {
                 RotateRight(_root);
             }
@@ -180,10 +180,10 @@ public:
                 RotateLeft(_root->pLeft);
                 RotateRight(_root);
             }
-            else if (BalanceFactor(_root->pLeft) == 0)
+            /*else if (BalanceFactor(_root->pLeft) == 0)
             {
                 RotateRight(_root);
-            }
+            }*/
         }
         else if (BalanceFactor(_root) < -1)
         {
@@ -192,14 +192,14 @@ public:
                 RotateRight(_root->pRight);
                 RotateLeft(_root);
             }
-            else if (BalanceFactor(_root->pRight) <= -1)
+            else if (BalanceFactor(_root->pRight) <= 0)
             {
                 RotateLeft(_root);
             }
-            else if (BalanceFactor(_root->pRight) == 0)
+            /*else if (BalanceFactor(_root->pRight) == 0)
             {
                 RotateLeft(_root);
-            }
+            }*/
         }
     }
     void remove(const T &value)
