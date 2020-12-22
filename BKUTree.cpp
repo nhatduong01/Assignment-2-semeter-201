@@ -59,7 +59,16 @@ public:
             keys.push(key);
         }
         Entry *new_entry = new Entry(key, value);
-        typename AVLTree::Node *A = avl->add(new_entry);
+        typename AVLTree::Node *A = NULL;
+        try
+        {
+            A = avl->add(new_entry);
+        }
+        catch (char const *e)
+        {
+            delete new_entry;
+            throw e;
+        }
         typename SplayTree::Node *B = splay->add(new_entry);
         A->corr = B;
         B->corr = A;
@@ -77,10 +86,21 @@ public:
             }
             size_queue--;
         }
-        splay->remove(key);
-        avl->remove(key);
+        // I have to fixx this problem
+        avl->remove_BKU(avl->root, key);
+        splay->remove_BKU(splay->root, key);
         if (splay->root)
-            keys.push(splay->root->entry->key);
+        {
+            if (keys.size() == maxNumOfKeys)
+            {
+                keys.pop();
+                keys.push(splay->root->entry->key);
+            }
+            else
+            {
+                keys.push(splay->root->entry->key);
+            }
+        }
     }
     V search(K key, vector<K> &traversedList)
     {
@@ -173,15 +193,23 @@ public:
     void clear()
     {
         if (avl)
+        {
             avl->clear();
+            delete avl;
+            avl = nullptr;
+        }
+
         if (splay)
+        {
             splay->clear();
+            delete splay;
+            splay = nullptr;
+        }
+
         while (!keys.empty())
         {
             keys.pop();
         }
-        delete avl;
-        delete splay;
     }
     class SplayTree
     {
@@ -246,13 +274,17 @@ public:
         }
         void clear(Node *root)
         {
-            if (root)
+            if (root == nullptr)
+                return;
+            clear(root->left);
+            clear(root->right);
+            if (root->entry)
             {
-                clear(root->left);
-                clear(root->right);
                 delete root->entry;
-                delete root;
+                root->entry = nullptr;
             }
+            delete root;
+            this->root = nullptr;
         }
         Node *Right_Rotation(Node *_root)
         {
@@ -431,6 +463,86 @@ public:
             Node *new_node = new Node(entry);
             return add(this->root, new_node);
         }
+        void remove_BKU(Node *root, K key)
+        {
+            if (root == nullptr)
+                throw("Not Found");
+            else
+            {
+                if (key > root->entry->key)
+                    remove_BKU(root->right, key);
+                else if (key < root->entry->key)
+                    remove_BKU(root->left, key);
+                else
+                {
+                    Node *temp1 = root;
+                    Self_Splay1(this->root, temp1);
+                    if (root->left && root->right)
+                    {
+                        Node *temp = this->root;
+                        Node *temp_left = temp->left;
+                        temp_left->parent = nullptr;
+                        Node *temp_right = temp->right;
+                        temp_right->parent = nullptr;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
+                        delete temp;
+                        temp = nullptr;
+                        root = nullptr;
+                        Node *biggestLeft = BiggestLeft(temp_left);
+                        Self_Splay1(temp_left, biggestLeft);
+                        temp_left->right = temp_right;
+                        temp_right->parent = temp_left;
+                        this->root = temp_left;
+                    }
+                    else if (root->left)
+                    {
+                        Node *temp = this->root;
+                        Node *temp_left = temp->left;
+                        temp_left->parent = nullptr;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
+                        delete temp;
+                        temp = nullptr;
+                        root = nullptr;
+                        Node *biggestLeft = BiggestLeft(temp_left);
+                        Self_Splay1(temp_left, biggestLeft);
+                        this->root = temp_left;
+                    }
+                    else if (root->right)
+                    {
+                        Node *temp = this->root;
+                        Node *temp_right = temp->right;
+                        temp_right->parent = nullptr;
+                        this->root = temp_right;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
+                        delete temp;
+                        temp = nullptr;
+                        root = nullptr;
+                    }
+                    else
+                    {
+                        if (root->entry)
+                        {
+                            delete root->entry;
+                            root->entry = nullptr;
+                        }
+                        delete root;
+                        this->root = nullptr;
+                    }
+                }
+            }
+        }
         void remove(Node *root, K key)
         {
             if (root == nullptr)
@@ -452,8 +564,13 @@ public:
                         temp_left->parent = nullptr;
                         Node *temp_right = temp->right;
                         temp_right->parent = nullptr;
-                        ;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
                         delete temp;
+                        temp = nullptr;
                         Node *biggestLeft = BiggestLeft(temp_left);
                         Self_Splay1(temp_left, biggestLeft);
                         temp_left->right = temp_right;
@@ -465,7 +582,13 @@ public:
                         Node *temp = this->root;
                         Node *temp_left = temp->left;
                         temp_left->parent = nullptr;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
                         delete temp;
+                        temp = nullptr;
                         Node *biggestLeft = BiggestLeft(temp_left);
                         Self_Splay1(temp_left, biggestLeft);
                         this->root = temp_left;
@@ -476,11 +599,21 @@ public:
                         Node *temp_right = temp->right;
                         temp_right->parent = nullptr;
                         this->root = temp_right;
-                        ;
+                        if (temp->entry)
+                        {
+                            delete temp->entry;
+                            temp->entry = nullptr;
+                        }
                         delete temp;
+                        temp = nullptr;
                     }
                     else
                     {
+                        if (root->entry)
+                        {
+                            delete root->entry;
+                            root->entry = nullptr;
+                        }
                         delete root;
                         this->root = nullptr;
                     }
@@ -572,15 +705,74 @@ public:
                 traverseNLR(func, root->right);
             }
         }
+        void remove_BKU(Node *&root, K key)
+        {
+            if (root == nullptr)
+                throw("Not Found");
+            else
+            {
+                if (key < root->entry->key)
+                {
+                    remove_BKU(root->left, key);
+                }
+                else if (key > root->entry->key)
+                {
+                    remove_BKU(root->right, key);
+                }
+                else
+                {
+                    if (!root->right && !root->left)
+                    {
+                        Node *temp = root;
+                        root = nullptr;
+                        temp->entry = nullptr;
+                        delete temp;
+                        temp = nullptr;
+                    }
+                    else if (!root->right)
+                    {
+                        Node *temp = root;
+                        root = root->left;
+                        temp->entry = nullptr;
+                        delete temp;
+                        temp = nullptr;
+                    }
+                    else if (!root->left)
+                    {
+                        Node *temp = root;
+                        root = root->right;
+                        temp->entry = nullptr;
+                        delete temp;
+                        temp = nullptr;
+                    }
+                    else
+                    {
+                        Node *temp = (BiggestLeftNode(root->left));
+                        root->entry = temp->entry;
+                        root->corr = temp->corr;
+                        temp->corr->corr = root;
+                        remove_BKU(root->left, temp->entry->key);
+                    }
+                }
+                if (root)
+                    root->height = max(Height(root->left), Height(root->right)) + 1;
+                SeflBalancing(root);
+            }
+        }
         void clear(Node *root)
         {
-            if (root)
+            if (root == nullptr)
+                return;
+
+            clear(root->left);
+            clear(root->right);
+            if (root->entry)
             {
-                clear(root->left);
-                clear(root->right);
                 delete root->entry;
-                delete root;
+                root->entry = nullptr;
             }
+            delete root;
+            this->root = nullptr;
         }
         void remove(Node *&, K);
         Entry *BiggestLeft(Node *root)
@@ -590,6 +782,15 @@ public:
             else
             {
                 return root->entry;
+            }
+        }
+        Node *BiggestLeftNode(Node *root)
+        {
+            if (root->right)
+                return BiggestLeftNode(root->right);
+            else
+            {
+                return root;
             }
         }
         int Height(Node *_root)
@@ -774,23 +975,38 @@ void BKUTree<K, V>::AVLTree::remove(Node *&root, K key)
             if (!root->right && !root->left)
             {
                 Node *temp = root;
+                if (root->entry)
+                {
+                    delete root->entry;
+                    root->entry = nullptr;
+                }
                 root = nullptr;
-                //;
                 delete temp;
+                temp = nullptr;
             }
             else if (!root->right)
             {
                 Node *temp = root;
                 root = root->left;
-                //;
+                if (root->entry)
+                {
+                    delete root->entry;
+                    root->entry = nullptr;
+                }
                 delete temp;
+                temp = nullptr;
             }
             else if (!root->left)
             {
                 Node *temp = root;
                 root = root->right;
-                //;
+                if (root->entry)
+                {
+                    delete root->entry;
+                    root->entry = nullptr;
+                }
                 delete temp;
+                temp = nullptr;
             }
             else
             {
@@ -846,263 +1062,86 @@ void BKUTree<K, V>::AVLTree::add(Node *&root, Entry *entry, Node *new_node)
 }
 int main()
 {
-    //BKUTree<int, int> test;
-    /*int arr[] = {10, 52, 98, 32, 68, 92, 40, 13, 42, 63, 99, 100};
-    for (int i = 0; i < 12; i++)
-    {
-        test_avl.add(arr[i], i);
-    }
-    test_avl.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    for (int i = 0; i < 12; i++)
-    {
-        test_avl.remove(arr[i]);
-    }
-    test_avl.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    /*cout << "\n Test splay tree \n";
-    BKUTree<int, int>::SplayTree test_tree;
-    test_tree.add(383, 1);
-    test_tree.add(886, 1);
-    test_tree.add(100, 1);
-    test_tree.add(915, 1);
-    test_tree.add(793, 1);
-    test_tree.add(150, 1);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.search(383);
-    cout << "\nTest Searching \n ";
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.add(700, 1);
-    test_tree.add(701, 1);
-    test_tree.add(702, 1);
-    test_tree.add(703, 1);
-    test_tree.add(704, 1);
-    test_tree.add(705, 1);
-    cout << endl;
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.search(793);
-    cout << endl;
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.add(500, 1);
-    test_tree.search(702);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.remove(500);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.remove(703);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    int arr1[] = {100, 105, 102, 99, 103, 106, 107, 111, 999, 123, 145, 165, 250, 270, 108};
-    for (int i = 0; i < 7; i++)
-    {
-        test_tree.add(arr1[i], 1);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 3; i++)
-    {
-        test_tree.search(arr1[i]);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 7; i++)
-    {
-        test_tree.remove(arr1[i]);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.add(10, 1);
-    test_tree.add(12, 1);
-    test_tree.add(11, 1);
-    test_tree.remove(10);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    cout << "Test tree 2 \n";
-    BKUTree<int, int>::SplayTree test_tree1;
-    for (int i = 0; i < 15; i++)
-    {
-        test_tree1.add(arr1[i], 1);
-    }
-    test_tree1.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 15; i++)
-    {
-        test_tree1.remove(arr1[i]);
-    }
-    cout << "\nTest removing all\n";
-    test_tree1.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });*/
-    /*BKUTree<int, int> test;
-    BKUTree<int, int>::AVLTree test_avl;
-    int arr[] = {10, 52, 98, 32, 68, 92, 40, 13, 42, 63, 99, 100};
-    for (int i = 0; i < 12; i++)
-    {
-        test_avl.add(arr[i], i);
-    }
-    test_avl.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    for (int i = 0; i < 12; i++)
-    {
-        test_avl.remove(arr[i]);
-    }
-    test_avl.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << "\n Test splay tree \n";
-    BKUTree<int, int>::SplayTree test_tree;
-    test_tree.add(383, 1);
-    test_tree.add(886, 1);
-    test_tree.add(100, 1);
-    test_tree.add(915, 1);
-    test_tree.add(793, 1);
-    test_tree.add(150, 1);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.search(383);
-    cout << "\nTest Searching \n ";
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.add(700, 1);
-    test_tree.add(701, 1);
-    test_tree.add(702, 1);
-    test_tree.add(703, 1);
-    test_tree.add(704, 1);
-    test_tree.add(705, 1);
-    cout << endl;
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.search(793);
-    cout << endl;
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.add(500, 1);
-    test_tree.search(702);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.remove(500);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    test_tree.remove(703);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    int arr1[] = {100, 105, 102, 99, 103, 106, 107, 111, 999, 123, 145, 165, 250, 270, 108};
-    for (int i = 0; i < 7; i++)
-    {
-        test_tree.add(arr1[i], 1);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 3; i++)
-    {
-        test_tree.search(arr1[i]);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 7; i++)
-    {
-        test_tree.remove(arr1[i]);
-    }
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    test_tree.add(10, 1);
-    test_tree.add(12, 1);
-    test_tree.add(11, 1);
-    test_tree.remove(10);
-    test_tree.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    cout << endl;
-    cout << "Test tree 2 \n";
-    BKUTree<int, int>::SplayTree test_tree1;
-    for (int i = 0; i < 15; i++)
-    {
-        test_tree1.add(arr1[i], 1);
-    }
-    test_tree1.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });
-    for (int i = 0; i < 15; i++)
-    {
-        test_tree1.remove(arr1[i]);
-    }
-    cout << "\nTest removing all\n";
-    test_tree1.traverseNLR([](int a, int b) {
-        cout << a << "  ";
-    });*/
     BKUTree<int, int> *tree = new BKUTree<int, int>(3);
-    int keys[] = {1, 3, 5, 7, 9, 2, 4};
-    for (int i = 0; i < 7; i++)
-        tree->add(keys[i], keys[i]);
+    tree->add(5, 10);
+    tree->add(4, 16);
+    tree->add(3, 16);
+    tree->add(2, 16);
+    tree->add(1, 16);
+    tree->add(50, 50);
+    tree->add(110, 110);
+    tree->add(150, 150);
+    tree->add(200, 220);
+    tree->add(7, 220);
     tree->traverseNLROnSplay(printKey);
     cout << endl;
     tree->traverseNLROnAVL(printKey);
-    cout << "\n Testing Search \n";
-    vector<int> traversedList;
-    cout << "\n Testing the queue \n";
-    queue<int> test_queue = tree->copy_queue();
-    cout << "The size is : " << test_queue.size() << endl;
-    while (test_queue.size() != 0)
+    tree->remove(110);
+    cout << endl;
+    tree->traverseNLROnSplay(printKey);
+    cout << endl;
+    tree->traverseNLROnAVL(printKey);
+    cout << endl;
+    queue<int> Q1 = tree->copy_queue();
+    cout << "\nThe queue at the moment is : \n";
+    while (!Q1.empty())
     {
-        cout << test_queue.front() << "\t";
-        test_queue.pop();
+        cout << Q1.front() << "\t";
+        Q1.pop();
     }
     cout << endl;
-    cout << tree->search(7, traversedList);
-    cout << "\n Print the vector \n";
-    for (auto i = traversedList.begin(); i != traversedList.end(); i++)
+    cout << endl;
+    vector<int> result;
+    tree->search(150, result);
+    tree->traverseNLROnAVL(printKey);
+    // //tree->remove(3);
+    // cout << endl;
+    cout << endl;
+    tree->traverseNLROnSplay(printKey);
+    cout << "\n The vector is : \n";
+    for (auto i = result.begin(); i != result.end(); i++)
     {
         cout << *i << "\t";
     }
-    /*for (int i = 0; i < 7; i++)
-        tree->remove(keys[i]);
+    Q1 = tree->copy_queue();
+    cout << "\nThe queue at the moment is : \n";
+    while (!Q1.empty())
+    {
+        cout << Q1.front() << "\t";
+        Q1.pop();
+    }
+    cout << "\nThe Search vector is : \n";
+    vector<int> result2;
+    tree->search(2, result2);
+    for (auto i = result2.begin(); i != result2.end(); i++)
+    {
+        cout << *i << "\t";
+    }
+    cout << endl;
     tree->traverseNLROnSplay(printKey);
     cout << endl;
-    tree->traverseNLROnAVL(printKey);*/
+    tree->traverseNLROnAVL(printKey);
+    tree->add(205, 110);
+    tree->add(204, 150);
+    tree->add(203, 220);
+    tree->add(202, 220);
+    result2.clear();
     cout << endl;
-    cout << "The slay tree is : \n";
     tree->traverseNLROnSplay(printKey);
+    cout << endl;
+    tree->traverseNLROnAVL(printKey);
+    tree->search(205, result2);
+    cout << "\n The vecotr is : \n";
+    for (auto i = result2.begin(); i != result2.end(); i++)
+    {
+        cout << *i << "\t";
+    }
+    cout << endl;
+    cout << endl;
+    tree->traverseNLROnSplay(printKey);
+    cout << endl;
+    tree->traverseNLROnAVL(printKey);
+    delete tree;
     system("pause");
     return 0;
 }

@@ -384,8 +384,8 @@ int main()
     test_tree.print2();
     test_tree.remove(703);
     test_tree.print2();
-    int arr[] = {100, 105, 102, 99, 103, 106, 107};
-    for (int i = 0; i < 7; i++)
+    int arr[] = {100, 105, 102, 99, 103, 106, 107, 150, 200, 50 , 13 , 1 , 250};
+    for (int i = 0; i < sizeof(arr)/sizeof(int); i++)
     {
         test_tree.add(arr[i]);
     }

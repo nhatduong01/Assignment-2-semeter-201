@@ -13,6 +13,12 @@
         "xlocnum": "cpp",
         "xmemory": "cpp",
         "xstring": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "deque": "cpp",
+        "ios": "cpp",
+        "streambuf": "cpp",
+        "system_error": "cpp",
+        "unordered_map": "cpp",
+        "xhash": "cpp"
     }
 }
